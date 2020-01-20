@@ -17,8 +17,8 @@ import javax.persistence.TemporalType;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
-@Entity
-@Table(name = "FACTURAS")
+//@Entity
+//@Table(name = "FACTURAS")
 public class Factura implements Serializable {
 
 	/**

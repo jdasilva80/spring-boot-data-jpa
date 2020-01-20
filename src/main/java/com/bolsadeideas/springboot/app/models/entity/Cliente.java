@@ -51,8 +51,8 @@ public class Cliente implements Serializable {
 	private Date createAt;
 	private String foto;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "cliente")
-	private List<Factura> facturas;
+//	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "cliente")
+//	private List<Factura> facturas;
 
 //	@PrePersist
 //	public void prePersist() {
@@ -108,16 +108,16 @@ public class Cliente implements Serializable {
 		this.foto = foto;
 	}
 
-	public List<Factura> getFacturas() {
-		return facturas;
-	}
-
-	public void setFacturas(List<Factura> facturas) {
-		this.facturas = facturas;
-	}
-
-	public void addFactura(Factura factura) {
-		facturas.add(factura);
-	}
+//	public List<Factura> getFacturas() {
+//		return facturas;
+//	}
+//
+//	public void setFacturas(List<Factura> facturas) {
+//		this.facturas = facturas;
+//	}
+//
+//	public void addFactura(Factura factura) {
+//		facturas.add(factura);
+//	}
 
 }
