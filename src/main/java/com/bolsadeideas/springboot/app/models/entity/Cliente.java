@@ -1,6 +1,7 @@
 package com.bolsadeideas.springboot.app.models.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,7 +19,6 @@ import javax.persistence.TemporalType;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -26,39 +26,34 @@ import org.springframework.format.annotation.DateTimeFormat;
 @Table(name = "clientes")
 public class Cliente implements Serializable {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-//	@Column(name = "NAME")
 	@NotEmpty
-	@Size(min = 2, max = 12)
 	private String nombre;
+
 	@NotEmpty
 	private String apellido;
+
 	@NotEmpty
 	@Email
 	private String email;
-	@Column(name = "CREATE_AT")
-	@Temporal(TemporalType.DATE)
-	@DateTimeFormat(pattern = "yyyy-mm-dd")
+
 	@NotNull
+	@Column(name = "create_at")
+	@Temporal(TemporalType.DATE)
+	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	private Date createAt;
+
+	@OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	private List<Factura> facturas;
+
 	private String foto;
 
-//	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "cliente")
-//	private List<Factura> facturas;
-
-//	@PrePersist
-//	public void prePersist() {
-//		
-//		createAt = new Date();
-//	}
+	public Cliente() {
+		facturas = new ArrayList<Factura>();
+	}
 
 	public Long getId() {
 		return id;
@@ -108,16 +103,27 @@ public class Cliente implements Serializable {
 		this.foto = foto;
 	}
 
-//	public List<Factura> getFacturas() {
-//		return facturas;
-//	}
-//
-//	public void setFacturas(List<Factura> facturas) {
-//		this.facturas = facturas;
-//	}
-//
-//	public void addFactura(Factura factura) {
-//		facturas.add(factura);
-//	}
+	public List<Factura> getFacturas() {
+		return facturas;
+	}
+
+	public void setFacturas(List<Factura> facturas) {
+		this.facturas = facturas;
+	}
+
+	public void addFactura(Factura factura) {
+		facturas.add(factura);
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	@Override
+	public String toString() {
+		return nombre + ", " + apellido;
+	}
+
+	private static final long serialVersionUID = 1L;
 
 }
