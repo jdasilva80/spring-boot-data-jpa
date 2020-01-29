@@ -2,10 +2,14 @@ package com.bolsadeideas.springboot.app.controllers;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Collection;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -13,10 +17,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -35,17 +45,20 @@ import com.bolsadeideas.springboot.app.util.paginator.PageRender;
 @SessionAttributes("cliente")
 public class ClienteController {
 
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
 	@Autowired
 	private IClienteService clienteService;
 
 	@Autowired
 	private IUploadService uploadService;
 
+	@Secured("ROLE_USER")
 	@RequestMapping("/ver/{id}")
 	public String ver(@PathVariable(name = "id") Long id, Map<String, Object> model,
 			RedirectAttributes flashAttribures) {
 
-		Cliente cliente = clienteService.findOne(id);
+		Cliente cliente = clienteService.fetchByIdWithFacturas(id);// clienteService.findOne(id);
 
 		if (cliente == null) {
 
@@ -58,8 +71,47 @@ public class ClienteController {
 		return "ver";
 	}
 
-	@RequestMapping(value = "/listar", method = RequestMethod.GET)
-	public String listar(@RequestParam(name = "page", defaultValue = "0") int numPage, Model model) {
+	@RequestMapping(value = { "/listar", "/" }, method = RequestMethod.GET)
+	public String listar(@RequestParam(name = "page", defaultValue = "0") int numPage, Model model,
+			Authentication authentication, HttpServletRequest request) {
+
+		if (authentication != null) {
+
+			logger.info("el usuario logueado es: ".concat(authentication.getName()));
+		}
+
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null) {
+
+			logger.info("SecurityContextHolder.getContext().getAuthentication(), el usuario logueado es: "
+					.concat(auth.getName()));
+		}
+
+		if (hasRole("ROLE_ADMIN")) {
+
+			logger.info("Hola ".concat(authentication.getName()).concat(" tienes Acceso!"));
+		} else if (authentication != null) {
+			logger.info("Hola ".concat(authentication.getName()).concat(" NO tienes Acceso!"));
+		}
+
+		SecurityContextHolderAwareRequestWrapper wrapperRequest = new SecurityContextHolderAwareRequestWrapper(request,
+				"ROLE_");
+
+		if (wrapperRequest.isUserInRole("ADMIN")) {
+
+			logger.info("SecurityContextHolderAwareRequestWrapper--> Hola ".concat(authentication.getName())
+					.concat(" tienes Acceso!"));
+		} else if (authentication != null) {
+			logger.info("SecurityContextHolderAwareRequestWrapper--> Hola ".concat(authentication.getName())
+					.concat(" NO tienes Acceso!"));
+		}
+
+		if (request.isUserInRole("ADMIN")) {
+
+			logger.info("HttpServletRequest --> Hola ".concat(authentication.getName()).concat(" tienes Acceso!"));
+		} else if (authentication != null) {
+			logger.info("HttpServletRequest --> Hola ".concat(authentication.getName()).concat(" NO tienes Acceso!"));
+		}
 
 		Pageable pag = PageRequest.of(numPage, 2);
 		Page<Cliente> clientes = clienteService.findAll(pag);
@@ -71,6 +123,7 @@ public class ClienteController {
 		return "clientes";
 	}
 
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@RequestMapping(value = "/form", method = RequestMethod.GET)
 	public String form(Map<String, Object> model) {
 
@@ -80,6 +133,7 @@ public class ClienteController {
 		return "form";
 	}
 
+	@Secured("ROLE_USER")
 	@RequestMapping("/uploads/{fileName:.+}")
 	public ResponseEntity<Resource> verFoto(@PathVariable("fileName") String fileName) {
 
@@ -96,6 +150,7 @@ public class ClienteController {
 
 	}
 
+	@Secured("ROLE_ADMIN")
 	@RequestMapping(value = "/form", method = RequestMethod.POST)
 	public String guardar(@Valid Cliente cliente, BindingResult bindingResult, Model model,
 			@RequestParam("file") MultipartFile file, SessionStatus status, RedirectAttributes flashAttributes) {
@@ -140,6 +195,7 @@ public class ClienteController {
 		return "redirect:/listar";
 	}
 
+	@Secured("ROLE_ADMIN")
 	@RequestMapping(value = "/editar/{id}", method = RequestMethod.GET)
 	public String editar(@PathVariable(name = "id") Long id, Model model, RedirectAttributes flashAttributes) {
 
@@ -160,6 +216,7 @@ public class ClienteController {
 		return "form";
 	}
 
+	@Secured("ROLE_ADMIN")
 	@RequestMapping(value = "/eliminar/{id}")
 	public String eliminar(@PathVariable(name = "id") Long id, RedirectAttributes flashAttributes) {
 
@@ -183,6 +240,37 @@ public class ClienteController {
 			flashAttributes.addFlashAttribute("error", "El id de cliente no es válido.");
 		}
 		return "redirect:/listar";
+	}
+
+	public boolean hasRole(String role) {
+
+		SecurityContext securityContext = SecurityContextHolder.getContext();
+
+		if (securityContext == null) {
+
+			return false;
+		}
+
+		Authentication auth = securityContext.getAuthentication();
+
+		if (auth == null) {
+
+			return false;
+		}
+
+		Collection<? extends GrantedAuthority> roles = auth.getAuthorities();
+
+		for (GrantedAuthority authority : roles) {
+
+			if (authority.getAuthority().equals(role)) {
+
+				logger.info("Hola usuario ".concat(auth.getName()).concat(", tienes el rol: ")
+						.concat(authority.getAuthority()));
+
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
