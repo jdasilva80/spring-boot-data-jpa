@@ -3,6 +3,7 @@ package com.bolsadeideas.springboot.app.controllers;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -53,6 +55,9 @@ public class ClienteController {
 	@Autowired
 	private IUploadService uploadService;
 
+	@Autowired
+	private MessageSource message;
+
 	@Secured("ROLE_USER")
 	@RequestMapping("/ver/{id}")
 	public String ver(@PathVariable(name = "id") Long id, Map<String, Object> model,
@@ -73,7 +78,7 @@ public class ClienteController {
 
 	@RequestMapping(value = { "/listar", "/" }, method = RequestMethod.GET)
 	public String listar(@RequestParam(name = "page", defaultValue = "0") int numPage, Model model,
-			Authentication authentication, HttpServletRequest request) {
+			Authentication authentication, HttpServletRequest request, Locale locale) {
 
 		if (authentication != null) {
 
@@ -116,7 +121,7 @@ public class ClienteController {
 		Pageable pag = PageRequest.of(numPage, 2);
 		Page<Cliente> clientes = clienteService.findAll(pag);
 		PageRender<Cliente> pageRender = new PageRender<Cliente>("/listar", clientes);
-		model.addAttribute("titulo", "Listado de clientes");
+		model.addAttribute("titulo", message.getMessage("text.cliente.listar.titulo", null, locale));
 		model.addAttribute("page", pageRender);
 		model.addAttribute("clientes", clientes);
 
