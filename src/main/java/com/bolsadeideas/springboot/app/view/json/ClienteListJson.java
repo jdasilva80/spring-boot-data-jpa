@@ -14,6 +14,7 @@ public class ClienteListJson extends MappingJackson2JsonView {
 
 	@Override
 	protected Object filterModel(Map<String, Object> model) {
+		
 		model.remove("titulo");
 		model.remove("page");
 		@SuppressWarnings("unchecked")

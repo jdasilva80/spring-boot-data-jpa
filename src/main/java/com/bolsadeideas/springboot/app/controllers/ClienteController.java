@@ -5,6 +5,8 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -29,10 +31,12 @@ import org.springframework.security.web.servletapi.SecurityContextHolderAwareReq
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +46,7 @@ import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.services.IClienteService;
 import com.bolsadeideas.springboot.app.services.IUploadService;
 import com.bolsadeideas.springboot.app.util.paginator.PageRender;
+import com.bolsadeideas.springboot.app.view.xml.ClienteList;
 
 @Controller
 @SessionAttributes("cliente")
@@ -74,6 +79,16 @@ public class ClienteController {
 		model.put("titulo", "El detalle del cliente : " + cliente.getNombre());
 
 		return "ver";
+	}
+
+	@GetMapping(value = "/listar-rest")
+	public @ResponseBody ClienteList listarRest() {
+
+//		List<Cliente> clientes = StreamSupport.stream(clienteService.findAll().spliterator(), false)
+//				.collect(Collectors.toList());
+		ClienteList clientes = new ClienteList(
+				StreamSupport.stream(clienteService.findAll().spliterator(), false).collect(Collectors.toList()));
+		return clientes;
 	}
 
 	@RequestMapping(value = { "/listar", "/" }, method = RequestMethod.GET)
